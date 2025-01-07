@@ -1,7 +1,7 @@
-cargo-features = ["different-binary-name"]
+#cargo-features = ["different-binary-name"]
 
 [package]
-name = "{{project-name}}"
+name = "flipperzero-gas-sensors"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.64.0"
@@ -10,13 +10,32 @@ autoexamples = false
 autotests = false
 autobenches = false
 
+[lib]
+name = "shared"
+
 [[bin]]
-name = "{{project-name}}"
-filename = "{{project-name}}.fap"
+name = "sgp30"
+#filename = "sgp30.fap"
 bench = false
 test = false
 
+[[bin]]
+name = "zphs01b"
+#filename = "zphs01b.fap"
+bench = false
+test = false
+
+#[[bin]]
+#name = "ens160.fap"
+#filename = "ens160.fap"
+#path = "src/bin/ens160.rs"
+#bench = false
+#test = false
+
+
+
 [dependencies]
-flipperzero = { version = "0.11.0" }
-flipperzero-sys = { version = "0.11.0" }
-flipperzero-rt = { version = "0.11.0" }
+flipperzero = { path = "..\\flipperzero-rs\\crates\\flipperzero" }
+flipperzero-sys = { path = "..\\flipperzero-rs\\crates\\sys" }
+flipperzero-rt = { path = "..\\flipperzero-rs\\crates\\rt" }
+heapless = "0.8.0"

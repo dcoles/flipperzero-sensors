@@ -5,18 +5,13 @@ rustflags = [
 
     # Size optimizations
     "-C", "panic=abort",
-    "-C", "debuginfo=0",
-    "-C", "opt-level=z",
-
-    # LTO helps reduce binary size
-    "-C", "embed-bitcode=yes",
-    "-C", "lto=yes",
+    "-C", "lto=true",
+    "-C", "linker-plugin-lto=true",
+    "-C", "embed-bitcode=true",
+    "-C", "opt-level=1",
 
     # Linker flags for relocatable binary
-    "-C", "link-args=--script=flipperzero-rt.ld --Bstatic --relocatable --discard-all --strip-all --lto-O3 --lto-whole-program-visibility",
-
-    # Required to link with `lld`
-    "-Z", "no-unique-section-names=yes",
+    "-C", "link-args=--script=flipperzero-rt.ld --Bstatic --relocatable",
 ]
 
 [build]
