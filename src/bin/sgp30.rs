@@ -74,6 +74,10 @@ fn read_u16_be(data: &[u8]) -> u16 {
 }
 
 /// View draw handler.
+///
+/// # Safety
+///
+/// This must only be called from a valid draw handler.
 pub unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut c_void) {
     let state = STATE.lock();
     if state.is_zero() {
@@ -113,8 +117,7 @@ fn main(_args: Option<&CStr>) -> i32 {
     let mut bus = i2c::Bus::EXTERNAL.acquire();
 
     unsafe {
-        let event_queue = sys::furi_message_queue_alloc(8, mem::size_of::<sys::InputEvent>() as u32)
-            as *mut sys::FuriMessageQueue;
+        let event_queue = sys::furi_message_queue_alloc(8, mem::size_of::<sys::InputEvent>() as u32);
 
         // GUI Setup
         let view_port = sys::view_port_alloc();
@@ -135,20 +138,15 @@ fn main(_args: Option<&CStr>) -> i32 {
         while running {
             if !Status::from(sys::furi_message_queue_get(
                 event_queue,
-                event.as_mut_ptr() as *mut sys::InputEvent as *mut c_void,
+                event.as_mut_ptr().cast(),
                 POLL_INTERVAL.as_millis() as u32,
             ))
             .is_err()
             {
                 let event = event.assume_init();
-                if event.type_ == sys::InputType_InputTypePress {
-                    match event.key {
-                        sys::InputKey_InputKeyBack => {
-                            running = false;
-                            continue;
-                        }
-                        _ => (),
-                    }
+                if event.type_ == sys::InputType_InputTypePress && event.key == sys::InputKey_InputKeyBack {
+                    running = false;
+                    continue;
                 }
             }
 

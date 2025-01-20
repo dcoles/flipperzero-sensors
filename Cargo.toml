@@ -14,6 +14,12 @@ autobenches = false
 name = "shared"
 
 [[bin]]
+name = "nicla-sense-env"
+#filename = "nicla-sense-env.fap"
+bench = false
+test = false
+
+[[bin]]
 name = "sgp30"
 #filename = "sgp30.fap"
 bench = false
@@ -24,15 +30,6 @@ name = "zphs01b"
 #filename = "zphs01b.fap"
 bench = false
 test = false
-
-#[[bin]]
-#name = "ens160.fap"
-#filename = "ens160.fap"
-#path = "src/bin/ens160.rs"
-#bench = false
-#test = false
-
-
 
 [dependencies]
 flipperzero = { path = "..\\flipperzero-rs\\crates\\flipperzero" }

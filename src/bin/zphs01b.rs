@@ -53,7 +53,7 @@ fn read_u16_be(data: &[u8]) -> u16 {
 }
 
 fn calculate_checksum(data: &[u8]) -> u8 {
-    data.into_iter()
+    data.iter()
         .fold(0u8, |acc, &x| acc.wrapping_add(x))
         .not()
         .wrapping_add(1)
