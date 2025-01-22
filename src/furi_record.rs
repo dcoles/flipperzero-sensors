@@ -4,7 +4,12 @@ use core::ptr::NonNull;
 use flipperzero_sys as sys;
 
 
-pub trait RecordType {
+/// A kind of record that can be opened.
+///
+/// # Safety
+///
+/// `CType` must be a C-compatible structure that can be zeroed.
+pub unsafe trait RecordType {
     const NAME: &CStr;
     type CType;
 }

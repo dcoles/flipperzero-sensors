@@ -9,7 +9,7 @@ use crate::furi_record::{Record, RecordType};
 
 pub struct Power;
 
-impl RecordType for Power {
+unsafe impl RecordType for Power {
     const NAME: &CStr = c"power";
     type CType = sys::Power;
 }
