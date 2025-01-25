@@ -21,7 +21,7 @@ pub enum IndoorSensorMode {
     PublicBuildingAirQuality = 4,
     Sulfur = 5,
 }
-    
+
 
 pub struct NiclaSenseEnv<'a> {
     bus: &'a mut i2c::BusHandle,
@@ -129,27 +129,27 @@ impl<'a> NiclaSenseEnv<'a> {
 
         self.bus.is_device_ready(self.device, timeout)
     }
-    
+
     pub fn software_revision(&mut self) -> u8 {
         self.read_u8(Self::SOFTWARE_REVISION_REGISTER).unwrap()
     }
-    
+
     pub fn product_id(&mut self) -> u8 {
         self.read_u8(Self::PRODUCT_ID_REGISTER).unwrap()
     }
-    
+
     pub fn serial_number(&mut self) -> [u8; 6] {
         let mut buf = [0u8; 6];
         self.read_exact(Self::SERIAL_NUMBER_REGISTER, &mut buf).ok();
 
         buf
     }
-    
+
     pub fn reset(&mut self) {
         let status = self.read_u8(Self::STATUS_REGISTER).unwrap();
         self.write_u8(Self::CONTROL_REGISTER, status | (1 << 7)).ok();
     }
-    
+
     pub fn deep_sleep(&mut self) {
         let status = self.read_u8(Self::STATUS_REGISTER).unwrap();
         self.write_u8(Self::CONTROL_REGISTER, status | (1 << 6)).ok();
@@ -172,7 +172,7 @@ impl<'a> NiclaSenseEnv<'a> {
     pub fn set_orange_led(&mut self, value: u8) {
         self.write_u8(Self::ORANGE_LED_REGISTER, value).unwrap()
     }
-    
+
     pub fn set_rgb_colour(&mut self, red: u8, green: u8, blue: u8) {
         self.write_u8(Self::RGB_RED_REGISTER, red).unwrap();
         self.write_u8(Self::RGB_GREEN_REGISTER, green).unwrap();
@@ -184,13 +184,13 @@ impl<'a> NiclaSenseEnv<'a> {
     }
 
     /// Get the temperature in degrees Celsius.
-    /// 
+    ///
     /// A value of -300.0 indicates that the temperature sensor is not ready.
     pub fn temperature(&mut self) -> f32 {
         /// 0x00 0x00 0x96 0xc3 = Not ready (-300.0)
         self.read_f32(Self::TEMPERATURE_REGISTER).unwrap()
     }
-    
+
     /// Get the relative humidity level (0-100%RH).
     pub fn humidity(&mut self) -> f32 {
         self.read_f32(Self::HUMIDITY_REGISTER).unwrap()
@@ -222,15 +222,15 @@ impl<'a> NiclaSenseEnv<'a> {
 
     /// Retrieves the EPA air quality index. Range is 0 to 500.
     ///
-    /// The" EPA AQI" is strictly following the EPA standard and is based on 
+    /// The" EPA AQI" is strictly following the EPA standard and is based on
     /// the 1-hour or 8-hour average of the ozone concentrations (concentration dependent).
     pub fn outdoor_epa_aqi(&mut self) -> u16 {
         self.read_u16(Self::ZMOD4510_EPA_AQI_REGISTER).unwrap()
     }
-    
+
     /// Get the fast air quality index. Range is 0 to 500.
     ///
-    /// As the standard averaging leads to a very slow response, especially during testing and evaluation, 
+    /// As the standard averaging leads to a very slow response, especially during testing and evaluation,
     /// "Fast AQI" provides quicker results with a 1-minute averaging.
     pub fn outdoor_fast_aqi(&mut self) -> u16 {
         self.read_u16(Self::ZMOD4510_FAST_AQI_REGISTER).unwrap()
@@ -240,12 +240,12 @@ impl<'a> NiclaSenseEnv<'a> {
     pub fn outdoor_o3(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4510_O3_REGISTER).unwrap()
     }
-    
+
     /// Get the Nitrogen Dioxide (NO₂) concentration in ppb.
     pub fn outdoor_no2(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4510_NO2_REGISTER).unwrap()
     }
-    
+
     /// MOx resistance.
     pub fn outdoor_rmox(&mut self) -> [f32; 13] {
         let mut buf = [0u8; 4 * 13];
@@ -258,7 +258,7 @@ impl<'a> NiclaSenseEnv<'a> {
 
         values
     }
-    
+
     /// Get the mode of the indoor sensor.
     ///
     /// - 0: Mode to turn off the sensor and reduce power consumption.
@@ -294,32 +294,32 @@ impl<'a> NiclaSenseEnv<'a> {
     pub fn indoor_iqa(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4410_IAQ_REGISTER).unwrap()
     }
-    
+
     /// Get the total volitile organic compounds in mg/m³.
     pub fn indoor_total_voc(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4410_TVOC_REGISTER).unwrap()
     }
-    
+
     /// Get the estimated Carbon Dioxide (CO₂) concentration in ppm.
     pub fn indoor_estimated_co2(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4410_ECO2_REGISTER).unwrap()
     }
-    
+
     /// Get the relative indoor air quality index (0 to 500) over a 24 hour period.
     /// Available in IAQ, ULP and PBAQ modes.
-    /// 
+    ///
     /// - Below 100: Improvement in air quality
     /// - 100: No change in air quality
     /// - Over 100: Degregation in air qualiuty
     pub fn indoor_relative_iqa(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4410_REL_IAQ_REGISTER).unwrap()
     }
-    
+
     /// Get the ethanol (EthOH) concentration in ppm.
     pub fn indoor_ethanol(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4410_ETOH_REGISTER).unwrap()
     }
-    
+
     /// MOx resistances.
     pub fn indoor_rmox(&mut self) -> [f32; 13] {
         let mut buf = [0u8; 4 * 13];
@@ -350,21 +350,21 @@ impl<'a> NiclaSenseEnv<'a> {
     pub fn indoor_rhtr(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4410_RHTR_REGISTER).unwrap()
     }
-    
+
     /// Ambient temperature (degC).
     pub fn indoor_temp(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4410_TEMP_REGISTER).unwrap()
     }
-    
+
     /// Get the odor intensity.
     /// Only for Sulphur Odor mode.
     pub fn indoor_odor_intensity(&mut self) -> f32 {
         self.read_f32(Self::ZMOD4410_INTENSITY_REGISTER).unwrap()
     }
-    
+
     /// Get the odor class.
     /// Only for Sulphur Odor mode.
-    /// 
+    ///
     /// - 1: "sulphur" (sulfur-based)
     /// - 0: "acceptable" (organic-based)
     pub fn indoor_odor_class(&mut self) -> u8 {
@@ -393,18 +393,18 @@ impl<'a> NiclaSenseEnv<'a> {
     fn write_u8(&mut self, reg_addr: u8, data: u8) -> Result<(), i2c::Error> {
         self.bus.write_u8(self.device, reg_addr, data, furi::time::Duration::from_millis(Self::I2C_TIMEOUT_MS))
     }
-    
+
     fn read_u8(&mut self, reg_addr: u8) -> Result<u8, i2c::Error> {
         self.bus.read_u8(self.device, reg_addr, furi::time::Duration::from_millis(Self::I2C_TIMEOUT_MS))
     }
-    
+
     fn read_u16(&mut self, reg_addr: u8) -> Result<u16, i2c::Error> {
         let mut buf = [0u8; 2];
         self.read_exact(reg_addr, &mut buf)?;
 
         Ok(u16::from_le_bytes(buf))
     }
-    
+
     fn read_u32(&mut self, reg_addr: u8) -> Result<u32, i2c::Error> {
         let mut buf = [0u8; 4];
         self.read_exact(reg_addr, &mut buf)?;

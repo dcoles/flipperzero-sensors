@@ -17,12 +17,10 @@ use flipperzero_rt::{entry, manifest};
 
 use flipperzero_sys as sys;
 
-use shared::furi_hal_power::{Power, PowerEvent};
-use shared::furi_pubsub::Callback;
-use shared::furi_record::Record;
-use shared::gui::Gui;
-use shared::view_dispatcher::ViewDispatcher;
-use shared::view::View;
+use shared::furi::hal::power::{Power, PowerEvent};
+use shared::furi::pubsub::Callback;
+use shared::furi::record::RecordHandle;
+use shared::gui::{Gui, ViewDispatcher, ViewId, View};
 use shared::nicla_sense_env::{NiclaSenseEnv, IndoorSensorMode, OutdoorSensorMode};
 
 static SAMPLE_COUNT: AtomicU32 = AtomicU32::new(0);
@@ -95,7 +93,7 @@ macro_rules! sprintf {
         }
     }
 }
-    
+
 /// View draw handler.
 /// Screen is 128x64 px
 unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut c_void) {
@@ -110,7 +108,7 @@ unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut c_vo
         sprintf!(c"draw: %0.0f mA, battery: %0.0f%%", (-values.current * 1000.0) as c_double, values.battery_percentage as c_double),
     ];
 
-    sys::canvas_set_font(canvas, sys::Font_FontSecondary);
+    sys::canvas_set_font(canvas, sys::FontSecondary);
     for (n, line) in lines.iter().enumerate() {
         sys::canvas_draw_str(canvas, 0, (n + 1) as i32 * 9, line.as_c_str().as_ptr());
     }
@@ -128,8 +126,8 @@ unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut c_vo
         canvas,
         122,
         10,
-        sys::Align_AlignCenter,
-        sys::Align_AlignBottom,
+        sys::AlignCenter,
+        sys::AlignBottom,
         spinner.as_ptr(),
     );
 }
@@ -146,7 +144,7 @@ unsafe extern "C" fn tick_callback(ctx: *mut c_void) {
     let mut power_info = mem::zeroed();
     sys::power_get_info(context.power, &raw mut power_info);
     let battery_percentage = 100.0 * (power_info.capacity_remaining as f32 / power_info.capacity_full as f32);
-    
+
     let measurement =
     if device.is_ready() {
         Measurement {
@@ -194,16 +192,16 @@ unsafe extern "C" fn back(ctx: *mut c_void) -> u32 {
 fn main(_args: Option<&CStr>) -> i32 {
     let mut bus = i2c::Bus::EXTERNAL.acquire();
     let mut device = NiclaSenseEnv::with_default_addr(&mut bus);
-    
+
     // Power Setup
-    let power: Record<Power> = Record::open();
+    let power= RecordHandle::<Power>::open();
     let pubsub = power.get_pubsub();
 
     let callback = Callback::new(|event: &PowerEvent| {
         println!("PowerEvent: {:?}", event.type_ as c_int);
     });
     let callback = pin!(callback);
-    
+
     let _ = pubsub.subscribe(callback);
 
     let mut context = MainView {
@@ -212,20 +210,25 @@ fn main(_args: Option<&CStr>) -> i32 {
     };
 
     // GUI Setup
-    let gui: Record<Gui> = Record::open();
+    let gui = RecordHandle::<Gui>::open();
 
     let view_dispatcher = ViewDispatcher::new();
-    view_dispatcher.set_event_callback_context(&raw mut context as *mut _);
-    view_dispatcher.set_tick_event_callback(Some(tick_callback), FuriDuration::from_millis(500));
-    view_dispatcher.attach_to_gui(gui.as_ptr(), sys::ViewDispatcherType_ViewDispatcherTypeFullscreen);
+    unsafe {
+        view_dispatcher.set_event_callback_context(&raw mut context as *mut _);
+        view_dispatcher.set_tick_event_callback(Some(tick_callback), FuriDuration::from_millis(500));
+    }
+    view_dispatcher.attach_to_gui(&gui, sys::ViewDispatcherTypeFullscreen);
 
+    const MAIN_VIEW: ViewId = ViewId(0);
     let view = View::new();
-    view.set_context(view_dispatcher.as_ptr().cast());
-    view.set_draw_callback(Some(draw_callback));
-    view.set_previous_callback(Some(back));
+    unsafe {
+        view.set_context(view_dispatcher.as_ptr().cast());
+        view.set_draw_callback(Some(draw_callback));
+        view.set_previous_callback(Some(back));
+    }
 
-    view_dispatcher.add_view(0, view.as_ptr());
-    view_dispatcher.switch_to_view(0);
+    view_dispatcher.add_view(MAIN_VIEW, &view);
+    view_dispatcher.switch_to_view(MAIN_VIEW);
 
     println!("Setting outdoor sensor mode");
     if !device.set_outdoor_sensor_mode(OutdoorSensorMode::OutdoorAirQuality) {
@@ -239,10 +242,10 @@ fn main(_args: Option<&CStr>) -> i32 {
 
     device.set_orange_led(1 << 7); // Enable sensor error warning
     device.set_rgb_intensity(0);
-    
+
     view_dispatcher.run();
 
-    view_dispatcher.remove_view(0);
+    view_dispatcher.remove_view(MAIN_VIEW);
 
     0
 }

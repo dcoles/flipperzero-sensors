@@ -4,9 +4,10 @@ use core::ptr::NonNull;
 
 use flipperzero_sys as sys;
 
-use crate::furi_pubsub::PubSub;
-use crate::furi_record::{Record, RecordType};
+use crate::furi::pubsub::PubSub;
+use crate::furi::record::{Record, RecordType};
 
+#[repr(transparent)]
 pub struct Power;
 
 unsafe impl RecordType for Power {
@@ -21,7 +22,7 @@ impl Record<Power> {
             sys::power_off(self.as_ptr())
         }
     }
-    
+
     /// Reboot device.
     pub fn reboot(&self, mode: sys::PowerBootMode) {
         unsafe {

@@ -57,7 +57,7 @@ impl<'a, T> PubSub<'a, T> {
     /// Create a `PubSub` from raw [`sys::FuriPubSub`] pointer.
     ///
     /// # Safety
-    /// 
+    ///
     /// `raw` must be a pointer to a valid `FuriPubSub` and must not be
     /// invalidated while the returned struct is still in-scope.
     pub unsafe fn from_raw(raw: NonNull<sys::FuriPubSub>) -> PubSub<'a, T> {
@@ -68,7 +68,7 @@ impl<'a, T> PubSub<'a, T> {
     }
 
     /// Get raw `FuriPubSub` pointer.
-    /// 
+    ///
     /// This pointer must not be `free`'d or referenced after this struct is dropped.
     pub fn as_ptr(&self) -> *mut sys::FuriPubSub {
         self.raw.as_ptr()
@@ -80,7 +80,7 @@ impl<'a, T> PubSub<'a, T> {
         let subscription = unsafe {
             ptr::NonNull::new_unchecked(sys::furi_pubsub_subscribe(self.as_ptr(), Some(pubsub_callback::<T, F>), ptr.cast()))
         };
-        
+
         Subscription {
             raw: subscription,
         }
