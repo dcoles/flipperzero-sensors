@@ -42,7 +42,7 @@ impl Record<Power> {
 
     // TODO: get_pubsub()
     pub fn get_pubsub(&self) -> PubSub<PowerEvent> {
-        unsafe { PubSub::from_raw(NonNull::new_unchecked(sys::power_get_pubsub(self.as_ptr()))) }
+        unsafe { PubSub::from_raw(sys::power_get_pubsub(self.as_ptr())) }
     }
 
     /// Check battery health.

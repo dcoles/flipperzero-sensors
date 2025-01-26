@@ -17,11 +17,11 @@ use flipperzero_rt::{entry, manifest};
 
 use flipperzero_sys as sys;
 
-use shared::furi::hal::power::{Power, PowerEvent};
-use shared::furi::pubsub::Callback;
+use shared::furi::hal::power::Power;
 use shared::furi::record::RecordHandle;
 use shared::gui::{Gui, ViewDispatcher, ViewId, View};
 use shared::nicla_sense_env::{NiclaSenseEnv, IndoorSensorMode, OutdoorSensorMode};
+use shared::storage::{Storage, StorageEvent};
 
 static SAMPLE_COUNT: AtomicU32 = AtomicU32::new(0);
 static VALUES: Mutex<Measurement> = Mutex::new(Measurement::new());
@@ -193,16 +193,17 @@ fn main(_args: Option<&CStr>) -> i32 {
     let mut bus = i2c::Bus::EXTERNAL.acquire();
     let mut device = NiclaSenseEnv::with_default_addr(&mut bus);
 
+    // Storage Setup
+    let storage = RecordHandle::<Storage>::open();
+    let pubsub = storage.get_pubsub();
+    let callback = |event: &StorageEvent| {
+        println!("StorageEvent: {:?}", event.type_ as c_int);
+    };
+    let callback = pin!(callback);
+    let _subscription = pubsub.subscribe(callback);
+
     // Power Setup
     let power= RecordHandle::<Power>::open();
-    let pubsub = power.get_pubsub();
-
-    let callback = Callback::new(|event: &PowerEvent| {
-        println!("PowerEvent: {:?}", event.type_ as c_int);
-    });
-    let callback = pin!(callback);
-
-    let _ = pubsub.subscribe(callback);
 
     let mut context = MainView {
         power: power.as_ptr(),
