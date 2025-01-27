@@ -51,7 +51,7 @@ dependencies = [
 
 [[package]]
 name = "flipperzero"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "bitflags",
  "digest",
@@ -74,21 +74,21 @@ dependencies = [
 
 [[package]]
 name = "flipperzero-rt"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "flipperzero-sys",
 ]
 
 [[package]]
 name = "flipperzero-sys"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "ufmt",
 ]
 
 [[package]]
 name = "flipperzero-test"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "flipperzero-sys",
  "flipperzero-test-macros",
@@ -97,7 +97,7 @@ dependencies = [
 
 [[package]]
 name = "flipperzero-test-macros"
-version = "0.13.0"
+version = "0.14.0"
 dependencies = [
  "proc-macro2",
  "quote",

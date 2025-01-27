@@ -18,7 +18,7 @@ use flipperzero_rt::{entry, manifest};
 use flipperzero_sys as sys;
 
 use shared::furi::hal::power::Power;
-use shared::furi::record::RecordHandle;
+use shared::furi::record::Record;
 use shared::gui::{Gui, ViewDispatcher, ViewId, View};
 use shared::nicla_sense_env::{NiclaSenseEnv, IndoorSensorMode, OutdoorSensorMode};
 use shared::storage::{Storage, StorageEvent};
@@ -194,16 +194,15 @@ fn main(_args: Option<&CStr>) -> i32 {
     let mut device = NiclaSenseEnv::with_default_addr(&mut bus);
 
     // Storage Setup
-    let storage = RecordHandle::<Storage>::open();
-    let pubsub = storage.get_pubsub();
+    let storage = Record::<Storage>::open();
     let callback = |event: &StorageEvent| {
         println!("StorageEvent: {:?}", event.type_ as c_int);
     };
     let callback = pin!(callback);
-    let _subscription = pubsub.subscribe(callback);
+    let _subscription = storage.pubsub().subscribe(callback);
 
     // Power Setup
-    let power= RecordHandle::<Power>::open();
+    let power= Record::<Power>::open();
 
     let mut context = MainView {
         power: power.as_ptr(),
@@ -211,7 +210,7 @@ fn main(_args: Option<&CStr>) -> i32 {
     };
 
     // GUI Setup
-    let gui = RecordHandle::<Gui>::open();
+    let gui = Record::<Gui>::open();
 
     let view_dispatcher = ViewDispatcher::new();
     unsafe {

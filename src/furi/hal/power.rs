@@ -1,18 +1,15 @@
 use core::ffi::CStr;
 use core::mem;
-use core::ptr::NonNull;
 
 use flipperzero_sys as sys;
 
 use crate::furi::pubsub::PubSub;
-use crate::furi::record::{Record, RecordType};
+use crate::furi::record::{Record, RawRecord};
 
-#[repr(transparent)]
-pub struct Power;
+pub type Power = sys::Power;
 
-unsafe impl RecordType for Power {
+unsafe impl RawRecord for Power {
     const NAME: &CStr = c"power";
-    type CType = sys::Power;
 }
 
 impl Record<Power> {
@@ -40,8 +37,8 @@ impl Record<Power> {
         }
     }
 
-    // TODO: get_pubsub()
-    pub fn get_pubsub(&self) -> PubSub<PowerEvent> {
+    /// Get PubSub handle.
+    pub fn pubsub(&self) -> &PubSub<PowerEvent> {
         unsafe { PubSub::from_raw(sys::power_get_pubsub(self.as_ptr())) }
     }
 

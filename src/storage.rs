@@ -1,22 +1,18 @@
 use core::ffi::CStr;
-use core::ptr;
 
 use flipperzero_sys as sys;
 
 use crate::furi::pubsub::PubSub;
-use crate::furi::record::{Record, RecordType};
+use crate::furi::record::{Record, RawRecord};
 
+pub type Storage = sys::Storage;
 
-#[repr(transparent)]
-pub struct Storage;
-
-unsafe impl RecordType for Storage {
+unsafe impl RawRecord for Storage {
     const NAME: &CStr = c"storage";
-    type CType = sys::Storage;
 }
 
 impl Record<Storage> {
-    pub fn get_pubsub(&self) -> PubSub<StorageEvent> {
+    pub fn pubsub(&self) -> &PubSub<StorageEvent> {
         unsafe { PubSub::from_raw(sys::storage_get_pubsub(self.as_ptr())) }
     }
 }

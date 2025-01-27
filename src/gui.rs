@@ -6,17 +6,16 @@ use core::ffi::c_void;
 
 use flipperzero_sys as sys;
 
-use crate::furi::record::{Record, RecordType};
+use crate::furi::record::{Record, RawRecord};
 
 pub use view_port::ViewPort;
 pub use view_dispatcher::{ViewDispatcher, ViewId};
 pub use view::View;
 
-pub struct Gui;
+pub type Gui = sys::Gui;
 
-unsafe impl RecordType for Gui {
+unsafe impl RawRecord for Gui {
     const NAME: &core::ffi::CStr = c"gui";
-    type CType = sys::Gui;
 }
 
 impl Record<Gui> {
