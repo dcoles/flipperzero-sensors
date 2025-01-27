@@ -2,8 +2,14 @@ mod view_dispatcher;
 mod view;
 mod view_port;
 
+use core::convert::Infallible;
 use core::ffi::c_void;
+use core::ptr;
 
+use embedded_graphics::pixelcolor::BinaryColor;
+use embedded_graphics_core::prelude::{Dimensions, DrawTarget, Point};
+use embedded_graphics_core::primitives::Rectangle;
+use embedded_graphics_core::Pixel;
 use flipperzero_sys as sys;
 
 use crate::furi::record::{Record, RawRecord};
@@ -69,8 +75,10 @@ impl Record<Gui> {
     /// disables input and draw call dispatch functions in GUI service. No other
     /// applications or services will be able to draw until `direct_draw_release`
     /// call.
-    pub unsafe fn direct_draw_aquire(&self) -> *mut sys::Canvas {
-        unsafe { sys::gui_direct_draw_acquire(self.as_ptr()) }
+    pub unsafe fn direct_draw_aquire(&self) -> Canvas {
+        Canvas {
+            raw: unsafe { ptr::NonNull::new_unchecked(sys::gui_direct_draw_acquire(self.as_ptr())) }
+        }
     }
 
     /// Release Direct Draw Lock
@@ -79,5 +87,90 @@ impl Record<Gui> {
     /// acquired in `direct_draw_acquire` will become invalid after this call.
     pub unsafe fn direct_draw_release(&self) {
         unsafe { sys::gui_direct_draw_release(self.as_ptr()) }
+    }
+
+
+}
+
+pub struct Canvas {
+    raw: ptr::NonNull<sys::Canvas>,
+}
+
+impl Canvas {
+    pub fn as_ptr(&self) -> *mut sys::Canvas {
+        self.raw.as_ptr()
+    }
+
+    pub fn get_size(&self) -> (usize, usize) {
+        unsafe { (sys::canvas_width(self.as_ptr()), sys::canvas_height(self.as_ptr())) }
+    }
+
+    pub fn clear(&self) {
+        unsafe { sys::canvas_clear(self.as_ptr()) }
+    }
+
+    pub fn commit(&self) {
+        unsafe { sys::canvas_commit(self.as_ptr()) }
+    }
+}
+
+impl Dimensions for Canvas {
+    fn bounding_box(&self) -> Rectangle {
+        let (width, height) = self.get_size();
+
+        Rectangle {
+            top_left: (0, 0).into(),
+            size: (width as u32, height as u32).into(),
+        }
+    }
+}
+
+impl DrawTarget for Canvas {
+    type Color = BinaryColor;
+
+    type Error = Infallible;
+
+    fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
+    where
+        I: IntoIterator<Item = Pixel<Self::Color>>,
+    {
+        let (width, height) = self.get_size();
+        let (width, height) = (width as i32, height as i32);
+
+        unsafe {
+            for Pixel(Point { x, y }, color) in pixels.into_iter() {
+                if (0..=width).contains(&x) && (0..=height).contains(&y) {
+                    sys::canvas_set_color(self.as_ptr(), map_color(color));
+                    sys::canvas_draw_dot(self.as_ptr(), x, y);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<(), Self::Error> {
+        // Clamp rectangle coordinates to visible display area
+        let area = area.intersection(&self.bounding_box());
+
+        // Do not draw if the intersection size is zero.
+        if area.bottom_right().is_none() {
+            return Ok(());
+        }
+
+        unsafe {
+            sys::canvas_set_color(self.as_ptr(), map_color(color));
+            sys::canvas_draw_box(self.as_ptr(), area.top_left.x, area.top_left.y, area.size.width as usize, area.size.height as usize);
+        }
+
+        Ok(())
+    }
+}
+
+fn map_color(color: BinaryColor) -> sys::Color {
+    if color.is_on() {
+        sys::ColorBlack
+    } else {
+        sys::ColorWhite
     }
 }

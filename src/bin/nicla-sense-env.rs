@@ -8,7 +8,6 @@ use core::ffi::{c_double, c_int, c_void, CStr};
 use core::mem;
 use core::pin::pin;
 use core::sync::atomic::{AtomicU32, Ordering};
-
 use flipperzero::furi::sync::Mutex;
 use flipperzero::gpio::i2c;
 use flipperzero::{format, println};

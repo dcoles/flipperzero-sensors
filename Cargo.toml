@@ -5,7 +5,7 @@ name = "flipperzero-gas-sensors"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.64.0"
-autobins = false
+autobins = true
 autoexamples = false
 autotests = false
 autobenches = false
@@ -13,26 +13,11 @@ autobenches = false
 [lib]
 name = "shared"
 
-[[bin]]
-name = "nicla-sense-env"
-#filename = "nicla-sense-env.fap"
-bench = false
-test = false
-
-[[bin]]
-name = "sgp30"
-#filename = "sgp30.fap"
-bench = false
-test = false
-
-[[bin]]
-name = "zphs01b"
-#filename = "zphs01b.fap"
-bench = false
-test = false
-
 [dependencies]
 flipperzero = { path = "..\\flipperzero-rs\\crates\\flipperzero" }
 flipperzero-sys = { path = "..\\flipperzero-rs\\crates\\sys" }
 flipperzero-rt = { path = "..\\flipperzero-rs\\crates\\rt" }
 heapless = "0.8.0"
+embedded-graphics-core = "0.4.0"
+embedded-graphics = "0.8.1"
+eg-seven-segment = "0.2.0"
