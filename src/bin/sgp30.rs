@@ -32,7 +32,7 @@ const SGP30_GET_SERIAL: [u8; 2] = [0x36, 0x82];
 
 // GUI record
 const RECORD_GUI: &CStr = c"gui";
-const FULLSCREEN: sys::GuiLayer = sys::GuiLayer_GuiLayerFullscreen;
+const FULLSCREEN: sys::GuiLayer = sys::GuiLayerFullscreen;
 
 static CURRENT_SAMPLE: AtomicU32 = AtomicU32::new(0);
 static STATE: Mutex<State> = Mutex::new(State::new());
@@ -88,8 +88,8 @@ pub unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut 
             canvas,
             width / 2,
             height / 2,
-            sys::Align_AlignCenter,
-            sys::Align_AlignCenter,
+            sys::AlignCenter,
+            sys::AlignCenter,
             msg.as_c_str().as_ptr(),
         );
         return;
@@ -144,7 +144,7 @@ fn main(_args: Option<&CStr>) -> i32 {
             .is_err()
             {
                 let event = event.assume_init();
-                if event.type_ == sys::InputType_InputTypePress && event.key == sys::InputKey_InputKeyBack {
+                if event.type_ == sys::InputTypePress && event.key == sys::InputKeyBack {
                     running = false;
                     continue;
                 }

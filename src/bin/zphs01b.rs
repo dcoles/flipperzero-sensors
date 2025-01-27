@@ -22,7 +22,7 @@ use flipperzero_rt::{entry, manifest};
 use flipperzero_sys as sys;
 
 const POLL_INTERVAL: Duration = Duration::from_millis(500);
-const CHANNEL: sys::FuriHalSerialId = sys::FuriHalSerialId_FuriHalSerialIdLpuart;
+const CHANNEL: sys::FuriHalSerialId = sys::FuriHalSerialIdLpuart;
 const BAUD: u32 = 9600;
 
 const CMD_FETCH: [u8; 9] = [0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79];
@@ -31,7 +31,7 @@ const START_BIT: u8 = 0xFF;
 
 // GUI record
 const RECORD_GUI: &CStr = c"gui";
-const FULLSCREEN: sys::GuiLayer = sys::GuiLayer_GuiLayerFullscreen;
+const FULLSCREEN: sys::GuiLayer = sys::GuiLayerFullscreen;
 
 static SAMPLE_COUNT: AtomicU32 = AtomicU32::new(0);
 static VALUES: Mutex<Measurement> = Mutex::new(Measurement::new());
@@ -103,7 +103,7 @@ unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut c_vo
         printf!(c"O3: %.2f ppm; NO2: %.2f ppm", values.o3(), values.no2()),
     ];
 
-    sys::canvas_set_font(canvas, sys::Font_FontSecondary);
+    sys::canvas_set_font(canvas, sys::FontSecondary);
     for (n, line) in lines.iter().enumerate() {
         sys::canvas_draw_str(canvas, 0, (n + 1) as i32 * 10, line.as_c_str().as_ptr());
     }
@@ -121,8 +121,8 @@ unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut c_vo
         canvas,
         122,
         10,
-        sys::Align_AlignCenter,
-        sys::Align_AlignBottom,
+        sys::AlignCenter,
+        sys::AlignBottom,
         spinner.as_ptr(),
     );
 }
@@ -238,7 +238,7 @@ fn main(_args: Option<&CStr>) -> i32 {
 
     println!("Starting serial reader...");
     serial.start();
-    
+
     loop {
         match event_queue.get(POLL_INTERVAL.try_into().unwrap()) {
             Err(err) => {
@@ -247,11 +247,11 @@ fn main(_args: Option<&CStr>) -> i32 {
                 }
             },
             Ok(event) => match (event.type_, event.key) {
-                (sys::InputType_InputTypePress, sys::InputKey_InputKeyBack) => break,
+                (sys::InputTypePress, sys::InputKeyBack) => break,
                 _ => continue,
             },
         }
-        
+
         println!("Sending FETCH...");
         serial_handle.tx(&CMD_FETCH);
     }
@@ -259,12 +259,12 @@ fn main(_args: Option<&CStr>) -> i32 {
     serial.stop();
 
     // GUI Cleanup
-    unsafe {   
+    unsafe {
         sys::view_port_enabled_set(view_port, false);
         sys::gui_remove_view_port(gui.as_ptr(), view_port);
         sys::view_port_free(view_port);
     }
-    
+
     0
 }
 
@@ -507,7 +507,7 @@ mod tests {
     /// Humidity = 40% RH
     /// CH2O = 0.040 mg/m3
     /// O3 = 0.32 ppm
-    /// NO2 = 0.80 ppm 
+    /// NO2 = 0.80 ppm
     const TEST_DATA: [u8; RESPONSE_SIZE] = [0xFF, 0x86, 0x00, 0x65, 0x00, 0x36, 0x00, 0x96, 0x01, 0x9A, 0x00, 0x02, 0xFD, 0x00, 0x28, 0x00, 0x28, 0x00, 0x05, 0x00, 0x20, 0x00, 0x50, 0x00, 0x00, 0xEA];
 
     #[test]
