@@ -15,11 +15,13 @@ use core::ptr;
 
 use flipperzero::furi::message_queue::MessageQueue;
 use flipperzero::furi::sync::Mutex;
-use flipperzero::furi::serial::SerialHandle;
 use flipperzero::notification::{NotificationService, NotificationMessage, NotificationSequence};
 use flipperzero::{error, format, furi, notification_sequence, println};
 use flipperzero_rt::{entry, manifest};
 use flipperzero_sys as sys;
+
+use shared::sprintf;
+use shared::furi::hal::serial::SerialHandle;
 
 const POLL_INTERVAL: Duration = Duration::from_millis(500);
 const CHANNEL: sys::FuriHalSerialId = sys::FuriHalSerialIdLpuart;
@@ -59,20 +61,6 @@ fn calculate_checksum(data: &[u8]) -> u8 {
         .wrapping_add(1)
 }
 
-macro_rules! printf {
-    ($fmt:expr) => {
-        ::flipperzero::furi::string::FuriString::from($fmt)
-    };
-    ($fmt:expr, $($arg:expr),+) => {
-        {
-            let mut s = ::flipperzero::furi::string::FuriString::new();
-            ::flipperzero_sys::furi_string_printf(s.as_mut_ptr(), ($fmt as &CStr).as_ptr(), $($arg),+);
-
-            s
-        }
-    }
-}
-
 /// View draw handler.
 /// Screen is 128x64 px
 unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut c_void) {
@@ -87,20 +75,20 @@ unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut c_vo
     };
     let lines = [
         format!("Winsen ZPHS01B Gas Sensor"),
-        printf!(
+        sprintf!(
             c"PM (1, 2.5, 10): (%u, %u, %u) ugm3",
             pm_1 as u32,
             pm_2_5 as u32,
             pm_10 as u32
         ),
-        printf!(c"CO2: %u ppm; VOC: %s", values.co2() as u32, voc),
-        printf!(
+        sprintf!(c"CO2: %u ppm; VOC: %s", values.co2() as u32, voc),
+        sprintf!(
             c"Temp: %.1f degC; Humid: %u %%",
             values.temperature(),
             values.relative_humidity() as u32
         ),
-        printf!(c"CH2O: %.3f mgm3; CO: %.1f ppm", values.ch2o(), values.co()),
-        printf!(c"O3: %.2f ppm; NO2: %.2f ppm", values.o3(), values.no2()),
+        sprintf!(c"CH2O: %.3f mgm3; CO: %.1f ppm", values.ch2o(), values.co()),
+        sprintf!(c"O3: %.2f ppm; NO2: %.2f ppm", values.o3(), values.no2()),
     ];
 
     sys::canvas_set_font(canvas, sys::FontSecondary);

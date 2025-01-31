@@ -11,8 +11,10 @@ use flipperzero_sys as sys;
 
 use eg_seven_segment::SevenSegmentStyleBuilder;
 use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle}, pixelcolor::BinaryColor, prelude::*, primitives::{Circle, PrimitiveStyle, PrimitiveStyleBuilder, Rectangle, StrokeAlignment, Triangle}, text::{Alignment, Baseline, Text, TextStyleBuilder}
+    mono_font::{ascii::FONT_6X10, MonoTextStyle}, pixelcolor::BinaryColor, prelude::*, primitives::{Circle, PrimitiveStyle, Rectangle, Triangle}, text::{Alignment, Baseline, Text, TextStyleBuilder}
 };
+
+use shared::sprintf;
 use shared::{furi::record::Record, gui::Gui};
 
 manifest!(
@@ -22,20 +24,6 @@ manifest!(
     // See https://github.com/flipperzero-rs/flipperzero/blob/v0.7.2/docs/icons.md for icon format
     icon = "../rustacean-10x10.icon",
 );
-
-macro_rules! sprintf {
-    ($fmt:expr) => {
-        ::flipperzero::furi::string::FuriString::from($fmt)
-    };
-    ($fmt:expr, $($arg:expr),+) => {
-        {
-            let mut s = ::flipperzero::furi::string::FuriString::new();
-            ::flipperzero_sys::furi_string_printf(s.as_mut_ptr(), ($fmt as &CStr).as_ptr(), $($arg),+);
-
-            s
-        }
-    }
-}
 
 /// Draw some primitive shapes and some text underneath.
 fn draw_shapes<D>(display: &mut D) -> Result<(), D::Error>
@@ -110,7 +98,7 @@ where
 
     // Create text from current time and draw to display
     Text::with_text_style(
-        &time,
+        time,
         display.bounding_box().center(),
         character_style,
         text_style,
@@ -124,21 +112,22 @@ entry!(main);
 fn main(_args: Option<&CStr>) -> i32 {
     let gui = Record::<Gui>::open();
 
-    let mut canvas = unsafe { gui.direct_draw_aquire() };
+    //let mut canvas = unsafe { gui.direct_draw_aquire() };
+    let mut direct_draw = gui.direct_draw_acquire();
 
-    canvas.clear();
-    draw_shapes(&mut canvas).unwrap();
-    canvas.commit();
+    direct_draw.clear();
+    draw_shapes(&mut *direct_draw).unwrap();
+    direct_draw.commit();
     sleep(Duration::from_secs(3));
 
     for _ in 0..50 {
-        canvas.clear();
-        draw_clock(&mut canvas).unwrap();
-        canvas.commit();
+        direct_draw.clear();
+        draw_clock(&mut *direct_draw).unwrap();
+        direct_draw.commit();
         sleep(Duration::from_millis(100));
     }
 
-    unsafe { gui.direct_draw_release(); }
+    //unsafe { gui.direct_draw_release(); }
 
     0
 }

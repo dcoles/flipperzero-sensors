@@ -1,4 +1,7 @@
+use core::cell::UnsafeCell;
 use core::ffi::CStr;
+use core::marker::PhantomData;
+use core::ops::Deref;
 use core::ptr;
 
 use flipperzero_sys as sys;
@@ -17,44 +20,71 @@ pub unsafe trait RawRecord {
 /// This prevents the record being destroyed until all instances are dropped.
 #[repr(transparent)]
 pub struct Record<T: RawRecord> {
-    raw: ptr::NonNull<T>,
+    raw: UnsafeCell<T>,
 }
 
 impl<T: RawRecord> Record<T> {
-    /// Open record handle.
-    ///
-    /// This function will block if the associated record is not yet ready.
-    pub fn open() -> Self {
-        Self {
-            // SAFETY: `furi_record_open` blocks until the record is initialized with a valid value.
-            raw: unsafe { ptr::NonNull::new_unchecked(sys::furi_record_open(T::NAME.as_ptr()).cast()) },
-        }
-    }
-
     /// Name associated with this record.
     pub fn name() -> &'static CStr {
         T::NAME
     }
 
+    pub unsafe fn from_raw<'a>(raw: *mut T) -> &'a Self {
+        unsafe { &*(raw.cast()) }
+    }
+
+    /// Open record handle.
+    ///
+    /// This function will block if the associated record is not yet ready.
+    pub fn open() -> OpenRecord<T> {
+        OpenRecord::new()
+    }
+
     /// Returns the record data as a raw pointer.
     pub const fn as_ptr(&self) -> *mut T {
-        self.raw.as_ptr()
+        self.raw.get()
+    }
+}
+
+pub struct OpenRecord<T: RawRecord> {
+    raw: ptr::NonNull<T>,
+    _marker: PhantomData<T>,
+}
+
+impl<T: RawRecord> OpenRecord<T> {
+    /// Open record handle.
+    ///
+    /// This function will block if the associated record is not yet ready.
+    fn new() -> Self {
+        Self {
+            // SAFETY: `furi_record_open` blocks until the record is initialized with a valid value.
+            raw: unsafe { ptr::NonNull::new_unchecked(sys::furi_record_open(T::NAME.as_ptr()).cast()) },
+            _marker: PhantomData,
+        }
     }
 
     /// Extract record.
-    pub const fn as_record(&self) -> &Record<T> {
-        unsafe { &*(self as *const Self as *const Record<T>) }
+    pub const fn as_record(&self) -> &'_ Record<T> {
+        unsafe { &*(self.raw.as_ptr().cast()) }
     }
 }
 
-impl<T: RawRecord> Clone for Record<T> {
+impl<T: RawRecord> Clone for OpenRecord<T> {
     fn clone(&self) -> Self {
         // Just open a new record matching this one.
-        Self::open()
+        Self::new()
     }
 }
 
-impl<T: RawRecord> Drop for Record<T> {
+impl <T: RawRecord> Deref for OpenRecord<T> {
+    type Target = Record<T>;
+
+    fn deref(&self) -> &Self::Target {
+        self.as_record()
+    }
+}
+
+impl<T: RawRecord> Drop for OpenRecord<T> {
     fn drop(&mut self) {
         unsafe {
             // decrement the holders count

@@ -4,9 +4,8 @@
 #![no_main]
 #![no_std]
 
-use core::ffi::{c_double, c_int, c_void, CStr};
+use core::ffi::{c_double, c_void, CStr};
 use core::mem;
-use core::pin::pin;
 use core::sync::atomic::{AtomicU32, Ordering};
 use flipperzero::furi::sync::Mutex;
 use flipperzero::gpio::i2c;
@@ -16,11 +15,11 @@ use flipperzero_rt::{entry, manifest};
 
 use flipperzero_sys as sys;
 
+use shared::sprintf;
 use shared::furi::hal::power::Power;
 use shared::furi::record::Record;
 use shared::gui::{Gui, ViewDispatcher, ViewId, View};
 use shared::nicla_sense_env::{NiclaSenseEnv, IndoorSensorMode, OutdoorSensorMode};
-use shared::storage::{Storage, StorageEvent};
 
 static SAMPLE_COUNT: AtomicU32 = AtomicU32::new(0);
 static VALUES: Mutex<Measurement> = Mutex::new(Measurement::new());
@@ -69,29 +68,6 @@ manifest!(
 
 // Define the entry function
 entry!(main);
-
-macro_rules! printf {
-    ($fmt:expr) => {
-        ::flipperzero_sys::__wrap_printf((($fmt) as &CStr).as_ptr());
-    };
-    ($fmt:expr, $($arg:expr),+) => {
-        ::flipperzero_sys::__wrap_printf((($fmt) as &CStr).as_ptr(), $($arg),+);
-    }
-}
-
-macro_rules! sprintf {
-    ($fmt:expr) => {
-        ::flipperzero::furi::string::FuriString::from($fmt)
-    };
-    ($fmt:expr, $($arg:expr),+) => {
-        {
-            let mut s = ::flipperzero::furi::string::FuriString::new();
-            ::flipperzero_sys::furi_string_printf(s.as_mut_ptr(), ($fmt as &CStr).as_ptr(), $($arg),+);
-
-            s
-        }
-    }
-}
 
 /// View draw handler.
 /// Screen is 128x64 px
@@ -191,14 +167,6 @@ unsafe extern "C" fn back(ctx: *mut c_void) -> u32 {
 fn main(_args: Option<&CStr>) -> i32 {
     let mut bus = i2c::Bus::EXTERNAL.acquire();
     let mut device = NiclaSenseEnv::with_default_addr(&mut bus);
-
-    // Storage Setup
-    let storage = Record::<Storage>::open();
-    let callback = |event: &StorageEvent| {
-        println!("StorageEvent: {:?}", event.type_ as c_int);
-    };
-    let callback = pin!(callback);
-    let _subscription = storage.pubsub().subscribe(callback);
 
     // Power Setup
     let power= Record::<Power>::open();

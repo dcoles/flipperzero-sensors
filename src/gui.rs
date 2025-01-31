@@ -2,8 +2,11 @@ mod view_dispatcher;
 mod view;
 mod view_port;
 
+use core::cell::UnsafeCell;
 use core::convert::Infallible;
 use core::ffi::c_void;
+use core::marker::PhantomData;
+use core::ops::{Deref, DerefMut};
 use core::ptr;
 
 use embedded_graphics::pixelcolor::BinaryColor;
@@ -69,36 +72,113 @@ impl Record<Gui> {
         unsafe { sys::gui_set_lockdown(self.as_ptr(), lockdown) }
     }
 
+    /// Acquire Direct Draw lock to allow accessing the Canvas in monopoly mode.
+    ///
+    /// While holding the Direct Draw lock, all input and draw call dispatch
+    /// functions in the GUI service are disabled. No other applications or
+    /// services will be able to draw until the lock is released.
+    pub fn direct_draw_acquire(&self) -> DirectDrawGuard {
+        DirectDrawGuard::new(self)
+    }
+
+    /*
     /// Acquire Direct Draw lock and get Canvas instance
     ///
     /// This method return Canvas instance for use in monopoly mode. Direct draw lock
     /// disables input and draw call dispatch functions in GUI service. No other
     /// applications or services will be able to draw until `direct_draw_release`
     /// call.
-    pub unsafe fn direct_draw_aquire(&self) -> Canvas {
-        Canvas {
-            raw: unsafe { ptr::NonNull::new_unchecked(sys::gui_direct_draw_acquire(self.as_ptr())) }
-        }
+    unsafe fn direct_draw_aquire(&self) -> &Canvas {
+        unsafe { &*(&ptr::NonNull::new_unchecked(sys::gui_direct_draw_acquire(self.as_ptr())) as *const ptr::NonNull<sys::Canvas> as *const Canvas) }
     }
 
     /// Release Direct Draw Lock
     ///
     /// Release Direct Draw Lock, enables Input and Draw call processing. Canvas
     /// acquired in `direct_draw_acquire` will become invalid after this call.
-    pub unsafe fn direct_draw_release(&self) {
+    unsafe fn direct_draw_release(&self) {
         unsafe { sys::gui_direct_draw_release(self.as_ptr()) }
     }
-
-
+    */
 }
 
+/// A RAII implementation of a "scope lock" for the GUI Direct Draw Lock. When this
+/// structure is dropped, the Direct Draw Lock will be released.
+///
+/// This method return Canvas instance for use in monopoly mode. Direct draw lock
+/// disables input and draw call dispatch functions in GUI service. No other
+/// applications or services will be able to draw until `direct_draw_release`
+/// call.
+pub struct DirectDrawGuard<'a> {
+    gui: &'a Record<Gui>,
+    canvas: ptr::NonNull<sys::Canvas>,
+    _marker: PhantomData<&'a mut Canvas>,
+}
+
+impl<'a> DirectDrawGuard<'a> {
+    fn new(gui: &'a Record<Gui>) -> Self {
+        DirectDrawGuard {
+            gui,
+            canvas: unsafe { ptr::NonNull::new_unchecked(sys::gui_direct_draw_acquire(gui.as_ptr())) },
+            _marker: PhantomData,
+        }
+    }
+
+    fn canvas(&self) -> &'a Canvas {
+        unsafe { Canvas::from_raw(self.canvas.as_ptr()) }
+    }
+
+    fn canvas_mut(&mut self) -> &'a mut Canvas {
+        unsafe { Canvas::from_raw_mut(self.canvas.as_ptr()) }
+    }
+}
+
+impl Deref for DirectDrawGuard<'_> {
+    type Target = Canvas;
+
+    fn deref(&self) -> &Self::Target {
+        self.canvas()
+    }
+}
+
+impl DerefMut for DirectDrawGuard<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.canvas_mut()
+    }
+}
+
+impl Drop for DirectDrawGuard<'_> {
+    fn drop(&mut self) {
+        unsafe { sys::gui_direct_draw_release(self.gui.as_ptr()) }
+    }
+}
+
+#[repr(transparent)]
 pub struct Canvas {
-    raw: ptr::NonNull<sys::Canvas>,
+    raw: UnsafeCell<sys::Canvas>,
 }
 
 impl Canvas {
+    /// Get Canvas reference from raw pointer.
+    ///
+    /// # Safety
+    /// Pointer must be non-null and point to a valid `sys::Canvas`.
+    /// This pointer must outlive this reference.
+    pub unsafe fn from_raw<'a>(raw: *mut sys::Canvas) -> &'a Self {
+        unsafe { &*(raw.cast()) }
+    }
+
+    /// Get Canvas reference from raw pointer.
+    ///
+    /// # Safety
+    /// Pointer must be non-null and point to a valid `sys::Canvas`.
+    /// This pointer must outlive this reference.
+    pub unsafe fn from_raw_mut<'a>(raw: *mut sys::Canvas) -> &'a mut Self {
+        unsafe { &mut *(raw.cast()) }
+    }
+
     pub fn as_ptr(&self) -> *mut sys::Canvas {
-        self.raw.as_ptr()
+        self.raw.get()
     }
 
     pub fn get_size(&self) -> (usize, usize) {

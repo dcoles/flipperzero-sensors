@@ -3,13 +3,21 @@ use core::mem;
 
 use flipperzero_sys as sys;
 
-use crate::furi::pubsub::PubSub;
+use crate::furi::pubsub::RawPubSub;
 use crate::furi::record::{Record, RawRecord};
 
 pub type Power = sys::Power;
 
 unsafe impl RawRecord for Power {
     const NAME: &CStr = c"power";
+}
+
+unsafe impl RawPubSub for Power {
+    type Event = sys::PowerEvent;
+
+    unsafe fn get(this: *mut Self) -> *mut sys::FuriPubSub {
+        unsafe { sys::power_get_pubsub(this) }
+    }
 }
 
 impl Record<Power> {
@@ -35,11 +43,6 @@ impl Record<Power> {
 
             power_info
         }
-    }
-
-    /// Get PubSub handle.
-    pub fn pubsub(&self) -> &PubSub<PowerEvent> {
-        unsafe { PubSub::from_raw(sys::power_get_pubsub(self.as_ptr())) }
     }
 
     /// Check battery health.

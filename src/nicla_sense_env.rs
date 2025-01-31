@@ -1,5 +1,5 @@
 use flipperzero::gpio::i2c;
-use flipperzero::{error, furi, println};
+use flipperzero::furi;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
