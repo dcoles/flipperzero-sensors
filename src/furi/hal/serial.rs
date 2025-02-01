@@ -5,7 +5,7 @@ use core::sync::atomic::{AtomicPtr, Ordering};
 
 use flipperzero::furi::stream_buffer::StreamBuffer;
 use flipperzero::furi::thread::{self, ThreadId};
-use flipperzero::furi::time::Duration;
+use flipperzero::furi::time::FuriDuration;
 use flipperzero::{debug, furi, info, trace, warn};
 use flipperzero_sys::{self as sys, HasFlag};
 use sys::furi::FuriBox;
@@ -264,7 +264,7 @@ unsafe extern "C" fn async_serial_receiver_rx_callback<F: FnMut(&[u8])>(
     if event.has_flag(sys::FuriHalSerialRxEventData) {
         let data = [sys::furi_hal_serial_async_rx(handle)];
 
-        (*context).rx_stream.send(&data, Duration::ZERO);
+        (*context).rx_stream.send(&data, FuriDuration::ZERO);
         flags |= WorkerEvent::FLAG_DATA;
     }
 
@@ -300,7 +300,7 @@ unsafe extern "C" fn async_serial_receiver_worker<F: FnMut(&[u8])>(context: *mut
 
     loop {
         let events = WorkerEvent(
-            thread::wait_any_flags(WorkerEvent::MASK, true, Duration::MAX).unwrap_or(0),
+            thread::wait_any_flags(WorkerEvent::MASK, true, FuriDuration::MAX).unwrap_or(0),
         );
         debug!("WorkerEvent: {}", events.0);
 
@@ -311,7 +311,7 @@ unsafe extern "C" fn async_serial_receiver_worker<F: FnMut(&[u8])>(context: *mut
         if events.is_rx_data() {
             loop {
                 let mut data = [0u8; SERIAL_WORKER_BUFFER_LEN];
-                let len = (*context).rx_stream.receive(&mut data, Duration::ZERO);
+                let len = (*context).rx_stream.receive(&mut data, FuriDuration::ZERO);
 
                 if len == 0 {
                     break;

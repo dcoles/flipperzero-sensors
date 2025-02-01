@@ -15,6 +15,7 @@ use core::ptr;
 
 use flipperzero::furi::message_queue::MessageQueue;
 use flipperzero::furi::sync::Mutex;
+use flipperzero::furi::time::FuriDuration;
 use flipperzero::notification::{NotificationService, NotificationMessage, NotificationSequence};
 use flipperzero::{error, format, furi, notification_sequence, println};
 use flipperzero_rt::{entry, manifest};
@@ -117,7 +118,7 @@ unsafe extern "C" fn draw_callback(canvas: *mut sys::Canvas, _context: *mut c_vo
 
 unsafe extern "C" fn app_input_callback(input_event: *mut sys::InputEvent, ctx: *mut c_void) {
     let event_queue: &MessageQueue<sys::InputEvent> = &*ctx.cast();
-    event_queue.put(*input_event, furi::time::Duration::ZERO).unwrap();
+    event_queue.put(*input_event, FuriDuration::ZERO).unwrap();
 }
 
 // Entry point

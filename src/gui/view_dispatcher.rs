@@ -1,6 +1,6 @@
 use core::{ffi::c_void, ptr};
 
-use flipperzero::furi::time::Duration as FuriDuration;
+use flipperzero::furi::time::FuriDuration;
 use flipperzero_sys as sys;
 
 use crate::furi::record::Record;

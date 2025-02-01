@@ -1,5 +1,5 @@
+use flipperzero::furi::time::FuriDuration;
 use flipperzero::gpio::i2c;
-use flipperzero::furi;
 
 #[repr(u8)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
@@ -125,7 +125,7 @@ impl<'a> NiclaSenseEnv<'a> {
     }
 
     pub fn is_ready(&mut self) -> bool {
-        let timeout = furi::time::Duration::from_millis(Self::I2C_TIMEOUT_MS);
+        let timeout = FuriDuration::from_millis(Self::I2C_TIMEOUT_MS);
 
         self.bus.is_device_ready(self.device, timeout)
     }
@@ -391,11 +391,11 @@ impl<'a> NiclaSenseEnv<'a> {
     }
 
     fn write_u8(&mut self, reg_addr: u8, data: u8) -> Result<(), i2c::Error> {
-        self.bus.write_u8(self.device, reg_addr, data, furi::time::Duration::from_millis(Self::I2C_TIMEOUT_MS))
+        self.bus.write_u8(self.device, reg_addr, data, FuriDuration::from_millis(Self::I2C_TIMEOUT_MS))
     }
 
     fn read_u8(&mut self, reg_addr: u8) -> Result<u8, i2c::Error> {
-        self.bus.read_u8(self.device, reg_addr, furi::time::Duration::from_millis(Self::I2C_TIMEOUT_MS))
+        self.bus.read_u8(self.device, reg_addr, FuriDuration::from_millis(Self::I2C_TIMEOUT_MS))
     }
 
     fn read_u16(&mut self, reg_addr: u8) -> Result<u16, i2c::Error> {
@@ -420,7 +420,7 @@ impl<'a> NiclaSenseEnv<'a> {
     }
 
     fn read_exact(&mut self, reg_addr: u8, buf: &mut [u8]) -> Result<(), i2c::Error> {
-        self.bus.read_exact(self.device, reg_addr, buf, furi::time::Duration::from_millis(Self::I2C_TIMEOUT_MS))
+        self.bus.read_exact(self.device, reg_addr, buf, FuriDuration::from_millis(Self::I2C_TIMEOUT_MS))
     }
 
 }

@@ -14,7 +14,8 @@ use core::time::Duration;
 use core::{mem, ptr};
 
 use flipperzero::furi::sync::Mutex;
-use flipperzero::furi::{self, thread};
+use flipperzero::furi::time::FuriDuration;
+use flipperzero::furi::thread;
 use flipperzero::gpio::i2c;
 use flipperzero::{format, println};
 use flipperzero_rt::{entry, manifest};
@@ -168,7 +169,7 @@ fn sgp30_get_serial_id(
     device: i2c::DeviceAddress,
     bus: &mut i2c::BusHandle,
 ) -> Result<[u8; 6], i2c::Error> {
-    let timeout = furi::time::Duration::from_millis(100);
+    let timeout = FuriDuration::from_millis(100);
     let mut buffer = [0u8; 9];
 
     bus.trx(device, &SGP30_GET_SERIAL, &mut buffer, timeout)?;
@@ -179,7 +180,7 @@ fn sgp30_get_serial_id(
 }
 
 fn sgp30_iaq_init(device: i2c::DeviceAddress, bus: &mut i2c::BusHandle) -> Result<(), i2c::Error> {
-    let timeout = furi::time::Duration::from_millis(100);
+    let timeout = FuriDuration::from_millis(100);
     bus.tx(device, &SGP30_IAQ_INIT, timeout)?;
     thread::sleep(Duration::from_millis(12));
 
@@ -191,7 +192,7 @@ fn sgp30_set_abs_humidity(
     bus: &mut i2c::BusHandle,
     value: &[u8; 2],
 ) -> Result<(), i2c::Error> {
-    let timeout = furi::time::Duration::from_millis(100);
+    let timeout = FuriDuration::from_millis(100);
     let crc = maxim_crc8(value, 0xFF);
 
     let cmd = [
@@ -211,7 +212,7 @@ fn sgp30_get_tvoc_inceptive_baseline(
     device: i2c::DeviceAddress,
     bus: &mut i2c::BusHandle,
 ) -> Result<[u8; 2], i2c::Error> {
-    let timeout = furi::time::Duration::from_millis(100);
+    let timeout = FuriDuration::from_millis(100);
 
     bus.tx(device, &SGP30_GET_INCEPTIVE_BASELINE, timeout)?;
     thread::sleep(Duration::from_millis(10));
@@ -237,7 +238,7 @@ fn sgp30_set_tvoc_baseline(
     bus: &mut i2c::BusHandle,
     value: &[u8; 2],
 ) -> Result<(), i2c::Error> {
-    let timeout = furi::time::Duration::from_millis(100);
+    let timeout = FuriDuration::from_millis(100);
     let crc = maxim_crc8(value, 0xFF);
 
     let cmd = [
@@ -257,7 +258,7 @@ fn sgp30_measure_iaq(
     device: i2c::DeviceAddress,
     bus: &mut i2c::BusHandle,
 ) -> Result<(u16, u16), i2c::Error> {
-    let timeout = furi::time::Duration::from_millis(100);
+    let timeout = FuriDuration::from_millis(100);
 
     bus.tx(device, &SGP30_MEASURE_IAQ, timeout)?;
     thread::sleep(Duration::from_millis(12));
@@ -281,7 +282,7 @@ fn maxim_crc8(data: &[u8], crc_init: u8) -> u8 {
 }
 
 fn init_sgp30(device: i2c::DeviceAddress, bus: &mut i2c::BusHandle) -> bool {
-    let timeout = furi::time::Duration::from_millis(100);
+    let timeout = FuriDuration::from_millis(100);
     if !bus.is_device_ready(device, timeout) {
         println!("ERROR: device not ready");
         return false;

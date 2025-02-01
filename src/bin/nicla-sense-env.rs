@@ -10,7 +10,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use flipperzero::furi::sync::Mutex;
 use flipperzero::gpio::i2c;
 use flipperzero::{format, println};
-use flipperzero::furi::time::Duration as FuriDuration;
+use flipperzero::furi::time::FuriDuration;
 use flipperzero_rt::{entry, manifest};
 
 use flipperzero_sys as sys;
